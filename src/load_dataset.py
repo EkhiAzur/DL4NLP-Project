@@ -7,7 +7,24 @@ import sys
 sys.path.insert(0, '../Basque_EDA')
 
 from augment import gen_eda_df
+
 def load_dataset(runArgs, trainingArgs, tokenizer):
+
+    """
+
+    This function load the dataset, apply EDA if needed and tokenize the data
+
+    Args:
+
+        runArgs (RunArgs): RunArgs object containing the arguments to run the model
+        trainingArgs (TrainingArguments): TrainingArguments object containing the arguments to train the model
+        tokenizer (AutoTokenizer): Tokenizer to use
+
+    Returns:
+
+        tuple: Tuple containing the train, eval and test datasets
+        
+    """
 
     # Load datasets from csv files
     splits = {k:pd.read_csv(f"{runArgs.data_path}/{k}.csv") for k in ["train", "eval", "test"]}
@@ -24,11 +41,13 @@ def load_dataset(runArgs, trainingArgs, tokenizer):
 
         logging.info(f"Split: {name} - {len(splits[name])} samples. Values percentages {splits[name]['label'].value_counts(normalize=True)}")
 
+        # Load data as datasets object
         k_split = datasets.Dataset.from_pandas(
             split,
             split=name,
         )
 
+        # Tokenize data
         splits[name] = k_split.map(
             tokenize_data,
             batched=True,

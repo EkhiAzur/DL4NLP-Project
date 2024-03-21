@@ -22,14 +22,17 @@ class ConstTrainer(Trainer):
 
         cross_loss, outputs = super().compute_loss(model, inputs, return_outputs=True)
 
+        # Get CLS token embeddings
         embeddings = outputs["hidden_states"][-1][:, 0, :]
     
         labels = inputs["labels"]
 
+        # Calculate SCL
         contrastive_loss = self.contrastive_loss(embeddings, labels)
 
         lam = self.lam
 
+        # Combine losses
         loss = lam * cross_loss + (1- lam) * contrastive_loss
 
         return (loss, outputs) if return_outputs else loss

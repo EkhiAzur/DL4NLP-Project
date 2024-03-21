@@ -4,7 +4,18 @@ from contrastive_trainer import ConstTrainer
 from runArgs import runArgs
 from transformers import TrainingArguments, Trainer, HfArgumentParser
 
+
 def mymetric(p):
+    """
+    This functions computes the precision, recall and f1 score of the model
+
+    Args:
+        p (tuple): Tuple containing the predictions and the labels
+
+    Returns:
+
+        dict: Dictionary containing the precision, recall and f1 score of the model
+    """
     predictions, labels = p
 
     if type(predictions) == tuple:
@@ -21,6 +32,15 @@ def mymetric(p):
     }
 
 def main(runArgs, trainingArgs, *args, **kwargs):
+    """
+    Main function to train the model
+
+    Args:
+
+        runArgs (RunArgs): RunArgs object containing the arguments to run the model
+        trainingArgs (TrainingArguments): TrainingArguments object containing the arguments to train the model
+
+    """
 
     logging.info("Starting training!")
 
@@ -43,6 +63,8 @@ def main(runArgs, trainingArgs, *args, **kwargs):
     # Training
 
     if runArgs.contrastive:
+        # Custom trainer for contrastive learning
+
         trainer = ConstTrainer(
             temp = runArgs.contrastive_temp,
             lam = runArgs.contrastive_lam,
@@ -65,8 +87,11 @@ def main(runArgs, trainingArgs, *args, **kwargs):
             compute_metrics = myetric,
         )
 
+    logging.info("Training model")
     trainer.train()
 
+    # Save the model
+    logging.info("Saving model")
     trainer.save_model()
 
     # Test the model on the splits
@@ -86,18 +111,23 @@ def main(runArgs, trainingArgs, *args, **kwargs):
 
 if __name__ == '__main__':
 
+    # Parsing arguments
     parser = HfArgumentParser((runArgs, TrainingArguments))
 
     runArgs, trainingArgs = parser.parse_args_into_dataclasses()
 
+    # Setting label2id and id2label
+
     if runArgs.contrastive:
 
+        # If contastive learning, we are in Wikipedia vs Txikipedia task
         runArgs.label2id = {"txiki": 0, "wiki": 1}
         runArgs.id2label = {0: "txiki", 1: "wiki"}
 
     else:
-        
+        # If not contrastive learning, we are in the original task. As data is in Basque, the labels are EZ_GAI (Fail) and GAI (Pass)
         runArgs.label2id = {"EZ_GAI": 0, "GAI": 1}
         runArgs.id2label = {0: "EZ_GAI", 1: "GAI"}
 
+    # Run main
     main(runArgs, trainingArgs)
